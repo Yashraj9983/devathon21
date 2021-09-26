@@ -291,7 +291,7 @@ class App extends Component {
              dBank ADDRESS : 
             <span style={{fontSize:'12px'}}> {this.state.dBankAddress} </span> 
           </div>
-          <div style={{marginTop:'10px'}}>Balance : {this.state.userBalance}</div>
+          <div style={{marginTop:'10px'}}>Balance : <span style={{fontSize:'2em'}}>{this.state.userBalance}</span></div>
           <br></br>
     
           
