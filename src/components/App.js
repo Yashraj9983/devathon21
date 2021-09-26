@@ -99,6 +99,32 @@ class App extends Component {
     //in try block call dBank withdraw();
   }
 
+
+  async borrow(amount) {
+    if(this.state.dbank!=='undefined'){
+      try{
+        await this.state.dbank.methods.borrow().send({value: amount.toString(), from: this.state.account})
+      } catch (e) {
+        console.log('Error, borrow: ', e)
+      }
+    }
+  }
+
+  async payOff(e) {
+    e.preventDefault()
+    if(this.state.dbank!=='undefined'){
+      try{
+        const collateralEther = await this.state.dbank.methods.collateralEther(this.state.account).call({from: this.state.account})
+        const tokenBorrowed = collateralEther/2
+        await this.state.token.methods.approve(this.state.dBankAddress, tokenBorrowed.toString()).send({from: this.state.account})
+        await this.state.dbank.methods.payOff().send({from: this.state.account})
+      } catch(e) {
+        console.log('Error, pay off: ', e)
+      }
+    }
+  }
+
+
   constructor(props) {
     super(props)
     this.state = {
@@ -257,12 +283,19 @@ class App extends Component {
         <div className="container-fluid mt-5 text-center">
         <br></br>
           <h1 style={{marginTop:'50px'}}> Welcome to Decentralized ₿ank</h1>
-          <div style={{fontSize:'1em'}}>{this.state.account}</div>
-          <div>Balance : {this.state.userBalance}</div>
+          <div>
+             ADDRESS : 
+            <span style={{fontSize:'12px'}}> {this.state.account} </span> 
+          </div>
+          <div>
+             dBank ADDRESS : 
+            <span style={{fontSize:'12px'}}> {this.state.dBankAddress} </span> 
+          </div>
+          <div style={{marginTop:'10px'}}>Balance : {this.state.userBalance}</div>
           <br></br>
     
           
-          <div className="row " style={{marginLeft:'510px',marginTop:'20px'}}>
+          <div className="row " style={{marginLeft:'470px',marginTop:'20px'}}>
             <main role="main" className="col-lg-12 d-flex text-center">
               <div className="content mr-auto ml-auto" >
               <Tabs defaultActiveKey="profile" id="uncontrolled-tab-example">
@@ -338,6 +371,56 @@ class App extends Component {
                     {/* <button type='submit' className='btn btn-primary' onClick={(e)=> this.withdraw(e)}>
                       WITHDRAW
                     </button> */}
+                  </div>
+                </Tab>
+                <Tab eventKey="borrow" title="Borrow">
+                  <div>
+
+                  <br></br>
+                    Do you want to borrow DBC tokens in exchange of ethers?
+                    <br></br>
+                    <div style={{color:'cyan'}}>  
+                    (You'll get 50% of collateral, in Tokens)
+                    <br></br>
+                    ( 1 DBC = 2 ETC )
+                    <br></br>
+                    ( DBC is our own currency )   
+                    
+                    </div>
+                    Type collateral amount (in ETH)
+                    <br></br>
+                    <br></br>
+                    <form onSubmit={(e) => {
+
+                      e.preventDefault()
+                      let amount = this.borrowAmount.value
+                      amount = amount * 10 **18 //convert to wei
+                      this.borrow(amount)
+                    }}>
+                      <div className='form-group mr-sm-2' style={{marginBottom:'10px'}}>
+                        <input
+                          id='borrowAmount'
+                          step="0.01"
+                          type='number'
+                          ref={(input) => { this.borrowAmount = input }}
+                          className="form-control form-control-md"
+                          placeholder='amount...'
+                          required />
+                      </div>
+                      <button type='submit' className='btn btn-primary'>BORROW</button>
+                    </form>
+                  </div>
+                </Tab>
+                <Tab eventKey="payOff" title="Payoff">
+                  <div>
+
+                  <br></br>
+                    Do you want to payoff the loan?
+                    <br></br>
+                    (You'll receive your collateral - fee)
+                    <br></br>
+                    <br></br>
+                    <button type='submit' className='btn btn-primary' onClick={(e) => this.payOff(e)}>PAYOFF</button>
                   </div>
                 </Tab>
               </Tabs>
