@@ -34,10 +34,16 @@ class App extends Component {
           const dBankAddress = dBank.networks[netId].address
 
           const tokenBalance = await token.methods.balanceOf(this.state.account).call()
-          console.log(web3.utils.fromWei(tokenBalance))
-          console.log(token)
-          this.setState({token: token , dbank: dbank, dBankAddress : dBankAddress})    
+          // console.log(web3.utils.fromWei(tokenBalance))
+          // console.log(token)
+          var userBalance = await dbank.methods.balanceOf(this.state.account).call()
+          userBalance=web3.utils.fromWei(userBalance)
+          this.setState({token: token , dbank: dbank, dBankAddress : dBankAddress, userBalance : userBalance})    
+          
+          // const userBalance = await this.state.dbank.methods.balanceOf(this.state.account)
+          // console.log('userBalance: ', web3.utils.fromWei(userBalance))
           // console.log(dBankAddress)
+          // console.log(dBank)
         }catch(e){
           console.log('Error',e)
           window.alert('Contracts not deployed to current network')
@@ -60,6 +66,10 @@ class App extends Component {
           value: amount.toString(),
           from: this.state.account
         })
+        const web3 = new Web3(window.ethereum)
+        var userBalance = await this.state.dbank.methods.balanceOf(this.state.account).call()
+        userBalance=web3.utils.fromWei(userBalance)
+        this.setState({userBalance: userBalance})
       } catch(e){
         console.log('error,deposit: ' ,e)
       }
@@ -68,14 +78,18 @@ class App extends Component {
       //in try block call dBank deposit();
   }
 
-  async withdraw(e) {
-    e.preventDefault()
+  async withdraw(amount) {
+    
     if(this.state.dbank!=='undefined'){
       
       try{
-        await this.state.dbank.methods.withdraw().send({
+        await this.state.dbank.methods.withdraw(amount).send({
           from: this.state.account
         })
+        const web3 = new Web3(window.ethereum)
+        var userBalance = await this.state.dbank.methods.balanceOf(this.state.account).call()
+        userBalance=web3.utils.fromWei(userBalance)
+        this.setState({userBalance: userBalance})
       } catch(e){
         console.log('error,withdraw: ' ,e)
       }
@@ -98,7 +112,9 @@ class App extends Component {
   }
 
   render() {
+    
     return (
+    
       <div className='text-monospace'>
         <nav className="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-2 shadow">
           <a
@@ -115,6 +131,7 @@ class App extends Component {
         <br></br>
           <h1 style={{marginTop:'50px'}}> Welcome to Decentralized ₿ank</h1>
           <div style={{fontSize:'1em'}}>{this.state.account}</div>
+          <div>Balance : {this.state.userBalance}</div>
           <br></br>
     
           
@@ -162,14 +179,38 @@ class App extends Component {
                 <Tab eventKey="withdraw" title="Withdraw">
                   <div>
                     <br></br>
-                    Do you want to withdraw + take interest?
+                    How much you want to Withdraw ?
                     <br></br>
                     <br></br>              
                   </div>
                   <div>
-                    <button type='submit' className='btn btn-primary' onClick={(e)=> this.withdraw(e)}>
+                  <br></br>
+                    <form onSubmit={(e)=>{
+                      e.preventDefault()
+                      let amount = this.withdrawAmount.value  
+                      // amount = amount * 10**18
+                      this.withdraw(amount)                    
+                    }}>
+                      <div className='form-group mr-sm-2' style={{marginBottom:'10px'}}>
+                        <br></br>
+                          <input
+                            id='withdrawAmount'
+                            step='0.01'
+                            type='number'
+                            min='0.01'
+                            max = {this.state.userBalance}
+                            className='form-control form-control-md'
+                            placeholder='amount...'
+                            required
+                            ref={(input)=>{this.withdrawAmount= input}}
+                            ></input>
+                      </div>
+                      <button type='submit' className='btn btn-primary'>WITHDRAW</button>
+                    </form>
+
+                    {/* <button type='submit' className='btn btn-primary' onClick={(e)=> this.withdraw(e)}>
                       WITHDRAW
-                    </button>
+                    </button> */}
                   </div>
                 </Tab>
               </Tabs>
@@ -177,7 +218,13 @@ class App extends Component {
             </main>
           </div>
         </div>
+        <div className='ocean'>
+          <div className='wave'></div>
+          <div className='wave'></div>
+          <div className='wave'></div>
+        </div>
       </div>
+    
     );
   }
 }
