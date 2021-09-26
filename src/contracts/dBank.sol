@@ -9,7 +9,7 @@ contract dBank {
 
   mapping(address => uint) public etherBalanceOf;
   mapping(address => uint) public depositStart;
-  mapping(address => bool) public isDeposited;
+  // mapping(address => bool) public isDeposited;
 
 
   event Deposit(address indexed user,uint etherAmount, uint timeStart);
@@ -20,23 +20,28 @@ contract dBank {
     token = _token;
   }
 
+  function balanceOf(address _owner) external view returns (uint) {
+    return etherBalanceOf[_owner];
+  }
   function deposit() payable public {
     //check if msg.sender didn't already deposited funds
-    require(isDeposited[msg.sender]== false, 'Error, deposit already active');
+    // require(isDeposited[msg.sender]== false, 'Error, deposit already active');
     //check if msg.value is >= than 0.01 ETH
     require(msg.value>=1e16,'Error , deposit must be >= 0.01 ETH');
     
     etherBalanceOf[msg.sender]=etherBalanceOf[msg.sender]+msg.value;//increase msg.sender ether deposit balance
     depositStart[msg.sender] = depositStart[msg.sender] + block.timestamp;//start msg.sender hodling time
-    isDeposited[msg.sender] = true;//set msg.sender deposit status to true
+    // isDeposited[msg.sender] = true;//set msg.sender deposit status to true
     emit Deposit(msg.sender, msg.value, block.timestamp);//emit Deposit event
   }
 
-  function withdraw() public {
+  function withdraw() payable public {
     
-    require(isDeposited[msg.sender]==true,'error, no previous deposit');
+    // require(isDeposited[msg.sender]==true,'error, no previous deposit');
     //check if msg.sender deposit status is true
+    require(msg.value>=1e16,'Error , withdraw must be >= 0.01 ETH');
     uint userBalance = etherBalanceOf[msg.sender];
+    require(msg.value <= userBalance,'Error ,  insufficient Balance');
     //assign msg.sender ether deposit balance to variable for event
 
     //check user's hodl time
@@ -48,16 +53,17 @@ contract dBank {
     uint interest = interestPerSecond * depositTime;
 
     //send eth to user
-    msg.sender.transfer(etherBalanceOf[msg.sender]);
+    msg.sender.transfer(msg.value);
     token.mint(msg.sender, interest);
     //send interest in tokens to user
 
     //reset depositer data
     depositStart[msg.sender]=0;
-    etherBalanceOf[msg.sender] = 0;
-    isDeposited[msg.sender]=false;
+    etherBalanceOf[msg.sender] = etherBalanceOf[msg.sender] - msg.value;
+    uint withdrawAmount = msg.value;
+    // isDeposited[msg.sender]=false;
     
-    emit Withdraw(msg.sender, userBalance, depositTime, interest);
+    emit Withdraw(msg.sender, msg.value, depositTime, interest);
 
     //emit event
   }
